@@ -3,9 +3,9 @@ const $=id=>document.getElementById(id);let objects=[],selected=null,mode='selec
 
 const toast=t=>{ $('toast').textContent=t;$('toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').style.display='none',3500)};
 const safe=async f=>{try{await f()}catch(e){console.error(e);toast(e.message||'연결을 확인해 주세요.')}};
-const names=['초록 잎','버들잎','단풍잎','은행잎','붉은 잎','갈색 잎','고사리','둥근 잎','회색 돌','얼룩 돌','베이지 돌','흰 돌','검은 돌','갈색 돌','작은 돌','긴 돌'];
-await Promise.all(Array.from({length:16},(_,i)=>new Promise(resolve=>{const im=new Image();im.onload=()=>{images[i]=im;resolve()};im.onerror=resolve;im.src=`assets/material-${String(i+1).padStart(2,'0')}.png`})));
-function palette(filter='all'){ $('materials').replaceChildren();images.forEach((im,i)=>{if((filter==='leaf'&&i>7)||(filter==='stone'&&i<8))return;const b=document.createElement('button');b.title=names[i];const img=im.cloneNode();img.alt=names[i];img.draggable=true;img.ondragstart=e=>e.dataTransfer.setData('text/plain',String(i));b.append(img);b.onclick=()=>add(i,500,350);$('materials').append(b)})}palette();
+const names=['초록 잎','버들잎','단풍잎','은행잎','붉은 잎','갈색 잎','고사리','둥근 잎','회색 돌','얼룩 돌','베이지 돌','흰 돌','검은 돌','갈색 돌','작은 돌','긴 돌','노란 자작나무 낙엽','주황 느티나무 낙엽'];
+await Promise.all(Array.from({length:18},(_,i)=>new Promise(resolve=>{const im=new Image();im.onload=()=>{images[i]=im;resolve()};im.onerror=resolve;im.src=`assets/material-${String(i+1).padStart(2,'0')}.png?v=materials3`})));
+function palette(filter='all'){ $('materials').replaceChildren();images.forEach((im,i)=>{if((filter==='leaf'&&i>=8&&i<16)||(filter==='stone'&&(i<8||i>=16)))return;const b=document.createElement('button');b.title=names[i];const img=im.cloneNode();img.alt=names[i];img.draggable=true;img.ondragstart=e=>e.dataTransfer.setData('text/plain',String(i));b.append(img);b.onclick=()=>add(i,500,350);$('materials').append(b)})}palette();
 document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>palette(b.dataset.filter));
 const canvas=$('canvas'),ctx=canvas.getContext('2d');const position=(e,c=canvas)=>{const r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}};
 function stash(){history.push(JSON.stringify(objects));if(history.length>40)history.shift();future=[]}
@@ -49,7 +49,7 @@ function finish(e){
  else if(!activePointers.size){gesture=null;if(drag){drag=null;changed();}}
 }
 canvas.onpointerup=finish;canvas.onpointercancel=finish;canvas.onlostpointercapture=finish;
-canvas.ondragover=e=>e.preventDefault();canvas.ondrop=e=>{e.preventDefault();const i=Number(e.dataTransfer.getData('text/plain'));if(Number.isInteger(i)&&i>=0&&i<16){const p=position(e);add(i,p.x,p.y)}};
+canvas.ondragover=e=>e.preventDefault();canvas.ondrop=e=>{e.preventDefault();const i=Number(e.dataTransfer.getData('text/plain'));if(Number.isInteger(i)&&i>=0&&i<18){const p=position(e);add(i,p.x,p.y)}};
 function alter(f){const o=objects.find(o=>o.id===selected);if(!o)return toast('먼저 재료를 선택하세요.');stash();f(o);changed()}
 $('smaller').onclick=()=>alter(o=>{o.w=Math.max(35,o.w*.85);o.h=Math.max(35,o.h*.85)});$('bigger').onclick=()=>alter(o=>{o.w=Math.min(700,o.w*1.15);o.h=Math.min(700,o.h*1.15)});$('rotate').onclick=()=>alter(o=>o.angle+=Math.PI/12);$('flip').onclick=()=>alter(o=>o.flip=!o.flip);$('front').onclick=()=>alter(o=>{objects=objects.filter(v=>v!==o);objects.push(o)});$('remove').onclick=()=>alter(o=>objects=objects.filter(v=>v!==o));$('clear').onclick=()=>{if(confirm('내 작업판을 모두 지울까요?')){stash();objects=[];changed()}};
 $('undo').onclick=()=>{if(history.length){future.push(JSON.stringify(objects));objects=JSON.parse(history.pop());selected=null;changed()}};$('redo').onclick=()=>{if(future.length){history.push(JSON.stringify(objects));objects=JSON.parse(future.pop());selected=null;changed()}};
@@ -65,5 +65,5 @@ function wrapText(t,text,maxWidth){const rows=[];let line='';for(const ch of tex
 function exportCanvas(){const c=document.createElement('canvas'),a=document.createElement('canvas');a.width=1000;a.height=700;render(a.getContext('2d'),objects,false);c.width=1600;const withCaption=$('includeCaption').checked&&($('title').value.trim()||$('description').value.trim());const t=c.getContext('2d');t.font='28px sans-serif';const lines=wrapText(t,$('description').value.trim(),1480);c.height=1120+(withCaption?110+lines.length*40:0);const paper=$('paper').value==='custom'?$('paperColor').value:$('paper').value;if(paper!=='transparent'){t.fillStyle=paper;t.fillRect(0,0,c.width,c.height)}t.drawImage(a,0,0,1600,1120);if(withCaption){t.fillStyle='#ffffff';t.fillRect(0,1120,1600,c.height-1120);t.fillStyle='#263f33';t.font='bold 38px sans-serif';t.fillText($('title').value.trim(),60,1180);t.font='28px sans-serif';lines.forEach((line,i)=>t.fillText(line,60,1225+i*40))}return c}
 $('help').onclick=()=>$('helpDialog').showModal();$('closeHelp').onclick=()=>$('helpDialog').close();
 try{const draft=JSON.parse(localStorage.getItem('nature-personal-draft-v1')||'null');if(draft&&Array.isArray(draft.objects)){objects=draft.objects;$('title').value=draft.title||'';$('description').value=draft.description||'';$('paper').value=draft.paper||'#ffffff';$('paperColor').value=draft.paperColor||'#ffffff';$('includeCaption').checked=draft.includeCaption!==false}}catch{toast('임시 저장 자료를 불러오지 못했어요. 새로 만들 수 있어요.')}
-applyPaper();render();$('ready').textContent=images.filter(Boolean).length===16?'나뭇잎 8종 · 돌 8종 준비 완료':'일부 재료를 불러오지 못했어요. 새로고침해 주세요.';
+applyPaper();render();$('ready').textContent=images.filter(Boolean).length===18?'나뭇잎 10종 · 돌 8종 준비 완료':'일부 재료를 불러오지 못했어요. 새로고침해 주세요.';
 })();
